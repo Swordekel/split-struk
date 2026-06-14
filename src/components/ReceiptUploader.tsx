@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { Camera, Lock, Lightbulb } from 'lucide-react'
+import { Camera, Lock, Lightbulb, Image } from 'lucide-react'
 import { runOCR } from '../lib/ocr'
 import { detectTotals, parseReceipt } from '../lib/parser'
 import { useSplitStore } from '../store/useSplitStore'
@@ -11,7 +11,9 @@ import { useNavigate } from 'react-router-dom'
 
 export default function ReceiptUploader() {
   const navigate = useNavigate()
-  const fileRef = useRef<HTMLInputElement>(null)
+  const cameraInputRef = useRef<HTMLInputElement>(null)
+  const galleryInputRef = useRef<HTMLInputElement>(null)
+  const [showSourceSelector, setShowSourceSelector] = useState(false)
   const [progress, setProgress] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
   const {
@@ -109,7 +111,7 @@ export default function ReceiptUploader() {
         ) : (
           <>
             <button
-              onClick={() => fileRef.current?.click()}
+              onClick={() => setShowSourceSelector(true)}
               className="w-full max-w-xs h-14 rounded-2xl font-bold text-white text-base flex items-center justify-center gap-2 transition-transform active:scale-[0.97]"
               style={{
                 background:
@@ -162,7 +164,7 @@ export default function ReceiptUploader() {
         )}
 
         <input
-          ref={fileRef}
+          ref={cameraInputRef}
           type="file"
           accept="image/*"
           capture="environment"
@@ -170,9 +172,111 @@ export default function ReceiptUploader() {
           onChange={(e) => {
             const f = e.target.files?.[0]
             if (f) handleFile(f)
+            e.target.value = ''
+          }}
+        />
+
+        <input
+          ref={galleryInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0]
+            if (f) handleFile(f)
+            e.target.value = ''
           }}
         />
       </div>
+
+      {/* Modern Bottom Sheet for Source Selection */}
+      {showSourceSelector && (
+        <div className="absolute inset-0 z-50 flex flex-col justify-end">
+          {/* Backdrop with blur & fade animation */}
+          <div 
+            className="absolute inset-0 bg-black/65 backdrop-blur-[2px] animate-fade-in"
+            onClick={() => setShowSourceSelector(false)}
+          />
+          
+          {/* Sheet with slide-up animation */}
+          <div 
+            className="relative bg-[var(--bg-elevated)] rounded-t-3xl p-6 pb-8 space-y-5 shadow-2xl border-t border-[var(--border-soft)] animate-sheet-slide-up"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Grab handle indicator */}
+            <div className="flex justify-center -mt-3 mb-2">
+              <div className="w-12 h-1.5 rounded-full bg-[var(--text-muted)] opacity-30" />
+            </div>
+            
+            {/* Header text */}
+            <div className="text-center">
+              <h3 className="text-base font-bold text-[var(--text-primary)]">
+                Pilih Foto Struk
+              </h3>
+              <p className="text-xs text-[var(--text-muted)] mt-1">
+                Gunakan kamera langsung atau pilih berkas dari galeri HP Anda
+              </p>
+            </div>
+            
+            {/* Selection Grid */}
+            <div className="grid grid-cols-1 gap-3">
+              {/* Camera Button */}
+              <button
+                onClick={() => {
+                  setShowSourceSelector(false)
+                  cameraInputRef.current?.click()
+                }}
+                className="flex items-center gap-4 p-4 rounded-2xl text-left bg-[var(--bg-surface)] hover:bg-[var(--bg-muted)] border border-[var(--border-subtle)] active:scale-[0.98] transition-all duration-150"
+              >
+                <div 
+                  className="w-12 h-12 rounded-xl flex items-center justify-center"
+                  style={{
+                    backgroundColor: 'rgba(139,90,60,0.12)',
+                    color: 'var(--accent-primary)'
+                  }}
+                >
+                  <Camera size={22} />
+                </div>
+                <div className="flex-1">
+                  <h4 className="font-semibold text-sm text-[var(--text-primary)]">Kamera (Ambil Foto)</h4>
+                  <p className="text-xs text-[var(--text-muted)] mt-0.5">Potret struk belanja secara langsung</p>
+                </div>
+              </button>
+
+              {/* Gallery Button */}
+              <button
+                onClick={() => {
+                  setShowSourceSelector(false)
+                  galleryInputRef.current?.click()
+                }}
+                className="flex items-center gap-4 p-4 rounded-2xl text-left bg-[var(--bg-surface)] hover:bg-[var(--bg-muted)] border border-[var(--border-subtle)] active:scale-[0.98] transition-all duration-150"
+              >
+                <div 
+                  className="w-12 h-12 rounded-xl flex items-center justify-center"
+                  style={{
+                    backgroundColor: 'rgba(139,90,60,0.12)',
+                    color: 'var(--accent-primary)'
+                  }}
+                >
+                  <Image size={22} />
+                </div>
+                <div className="flex-1">
+                  <h4 className="font-semibold text-sm text-[var(--text-primary)]">Galeri (Pilih Foto)</h4>
+                  <p className="text-xs text-[var(--text-muted)] mt-0.5">Pilih foto struk dari penyimpanan HP</p>
+                </div>
+              </button>
+            </div>
+
+            {/* Cancel Row */}
+            <button
+              onClick={() => setShowSourceSelector(false)}
+              className="w-full h-12 rounded-2xl font-bold text-sm text-[var(--text-muted)] border border-[var(--border-medium)] hover:bg-[var(--bg-muted)] active:scale-[0.98] transition-all flex items-center justify-center"
+            >
+              Batal
+            </button>
+          </div>
+        </div>
+      )}
 
       <BottomBar>
         <GhostBtn full onClick={() => navigate('/')}>

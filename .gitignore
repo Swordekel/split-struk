@@ -62,3 +62,5 @@ figma Ui/
 coverage
 *.lcov
 .nyc_output
+
+.vercel
